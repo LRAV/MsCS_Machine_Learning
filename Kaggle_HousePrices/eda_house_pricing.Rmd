@@ -1,0 +1,14 @@
+---
+title: "Kaggle - HousePrices - Exploratory"
+author: "Alan Córdova, Luis ALpízar, Salvador García"
+date: "18/10/2020"
+output: html_document
+---
+
+```{r}
+# Descripción de los datos
+data_entrena <- read.csv("./data/casas_entrena.csv")
+data_prueba <- read.csv("./data/casas_prueba.csv")
+str(data_entrena)
+```
+
