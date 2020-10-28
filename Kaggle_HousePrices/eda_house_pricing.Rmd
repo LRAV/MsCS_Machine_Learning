@@ -7,8 +7,101 @@ output: html_document
 
 ```{r}
 # Descripción de los datos
-data_entrena <- read.csv("./data/casas_entrena.csv")
-data_prueba <- read.csv("./data/casas_prueba.csv")
-str(data_entrena)
+library(kableExtra)
+library(tidyverse)
+library(tidymodels)
+library(patchwork)
+data_e <- read.csv("./data/casas_entrena.csv")
+data_pr <- read.csv("./data/casas_prueba.csv")
+glimpse(data_e)
+```
+Checar NA
+```{r}
+is.na(data_e) %>% table()
+```
+
+Solo usamos las observaciones para tipo de venta "Normal", pues es el único tipo de dato
+en los datos de prueba.
+```{r}
+# removemos info que altera el set segun la guia del documento que introduce el set
+data_e <- data_e %>% 
+  filter(Sale.Condition == "Normal")%>% 
+  filter(Gr.Liv.Area > 1500) %>% 
+  mutate(precio_miles = SalePrice / 1000) %>% 
+  select(-SalePrice)
+
+```
+
+```{r}
+# preprocesamiento
+receta_casas <- recipe(precio_miles ~ Overall.Qual, data_e)
+# modelo
+mod_lineal <- linear_reg() %>% set_engine("lm") 
+# workflow
+flow_1 <- workflow() %>% 
+  add_recipe(receta_casas) %>%
+  add_model(mod_lineal) 
+ajuste_1 <- fit(flow_1, data_e)
+
+```
+
+```{r}
+graficar_evaluar <- function(flow_1, data_e){
+  vc_particion <- vfold_cv(data_e, v = 10)
+  ctrl <- control_resamples(save_pred = TRUE)
+  ajuste <- fit_resamples(flow_1, vc_particion, 
+                          metrics = metric_set(rsq, rmse),
+                          control = ctrl)
+  metricas <- collect_metrics(ajuste) %>% 
+    mutate(across(where(is.numeric), round, 2))
+  preds_vc <- collect_predictions(ajuste) %>% arrange(.row) %>% 
+    bind_cols(data_e %>% select(-precio_miles))
+  
+  g_1 <- ggplot(preds_vc, aes(x = .pred, y = precio_miles)) +
+      geom_point() + 
+      geom_abline() +
+      geom_smooth(se = FALSE, method = "loess") +
+      xlab("Predicción (val cruzada)") +
+      ylab("Precio de venta") 
+  g_2 <- ggplot() + annotation_custom(gridExtra::tableGrob(metricas))
+  g_1 / g_2
+}
+graficar_evaluar(flow_1, data_e)
+```
+
+
+
+```{r}
+vc_particion <- vfold_cv(data_entrena, v = 10)
+ctrl <- control_resamples(save_pred = TRUE)
+ajuste <- fit_resamples(flow_1, vc_particion, 
+                        metrics = metric_set(rsq, rmse),
+                        control = ctrl)
+metricas <- collect_metrics(ajuste) %>%
+  mutate(across(where(is.numeric), round, 2))
+preds_vc <- collect_predictions(ajuste) %>% arrange(.row) %>% 
+  bind_cols(data_entrena %>% select(-SalePrice))
+
+preds_vc %>% select(.pred) %>% write.csv("salida_ejemplo.csv")
+```
+
+EDA
+
+```{r}
+data_e$Gr.Liv.Area %>% hist()
+
+```
+
+
+
+```{r}
+with(data_e, plot(data_e$Gr.Liv.Area, data_e$precio_miles))
+
+```
+
+
+```{r}
+data_e %>% select(Gr.Liv.Area) %>% arrange(desc(.))
+
 ```
 
