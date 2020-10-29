@@ -5,7 +5,7 @@ date: "18/10/2020"
 output: html_document
 ---
 
-```{r}
+```{r include=FALSE}
 # Descripción de los datos
 library(kableExtra)
 library(tidyverse)
@@ -14,9 +14,6 @@ library(patchwork)
 library(gridExtra)
 data_e <- read.csv("./data/casas_entrena.csv")
 data_pr <- read.csv("./data/casas_prueba.csv")
-glimpse(data_e)
-glimpse(data_pr)
-
 ```
 
 
@@ -48,12 +45,12 @@ data_e %>% select(Gr.Liv.Area, Sale.Condition) %>% arrange(desc(.))
 
 En resumen, solo usaremos las observaciones para tipo de venta "Normal" y cuya Gr Liv Area sea menor a 4,000. En el set de prueba solo tenemos ventas "Normal".
 ```{r}
-data_e <- read.csv("./data/casas_entrena.csv")
+#data_e <- read.csv("./data/casas_entrena.csv")
 
-data_e <- data_e %>% 
-  filter(Sale.Condition == "Normal", Gr.Liv.Area < 4000)%>% 
-  mutate(precio_miles = SalePrice / 1000) %>% 
-  select(-SalePrice)
+# data_e <- data_e %>% 
+#   filter(Sale.Condition == "Normal", Gr.Liv.Area < 4000)%>% 
+#   mutate(precio_miles = SalePrice / 1000) %>% 
+#   select(-SalePrice)
 
 ```
 
@@ -176,14 +173,11 @@ data_e$MS.SubClass = data_e$MS.SubClass %>% paste0("SC_", .) %>%  factor
 
 #fecha
 data_e$Mo.Sold = data_e$Mo.Sold %>% month.abb[.]
-
-
 ```
 
 Correlación con target
 ```{r}
 cor_e <- cor(data_e[sapply(data_e, is.numeric)])
-
 ```
 
 
@@ -191,16 +185,39 @@ cor_e <- cor(data_e[sapply(data_e, is.numeric)])
 ### Modelo prueba
 ```{r}
 # preprocesamiento
-receta_casas <- recipe(precio_miles ~ Overall.Qual, data_e)
+receta_casas <- recipe(SalePrice ~ ., 
+                       data = data_e) %>%
+  step_filter(Sale.Condition == "Normal") %>% 
+  step_filter(Gr.Liv.Area < 4000) %>% 
+  step_rm(contains("Pool")) %>% 
+  step_string2factor(all_nominal()) %>%
+  step_knnimpute(all_predictors(), neighbors = 5) %>% 
+  step_other(all_nominal(), threshold = 0.01) %>%
+  step_nzv(all_nominal()) %>%
+  step_YeoJohnson(all_numeric(), -SalePrice) %>% 
+  prep()
+  #step_rename_at(everything(), fn = ~ gsub(".", "_", ., fixed = TRUE)) %>%
+  #step_rename_at(everything(), fn = tolower) #%>% 
+  #prep() %>% 
+  #bake(new_data = data_e) %>% 
+  #slice(1:10)
+#colnames(receta_casas)
+
 # modelo
 mod_lineal <- linear_reg() %>% set_engine("lm") 
+
 # workflow
 flow_1 <- workflow() %>% 
   add_recipe(receta_casas) %>%
   add_model(mod_lineal) 
-ajuste_1 <- fit(flow_1, data_e)
 
+ajuste_1 <- fit(flow_1, data_e)
 ```
+Summary recipe
+```{r}
+receta_casas$var_info #%>% arrange(desc(.))
+```
+
 
 ```{r}
 graficar_evaluar <- function(flow_1, data_e){
