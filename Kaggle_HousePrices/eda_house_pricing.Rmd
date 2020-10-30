@@ -215,7 +215,7 @@ ajuste_1 <- fit(flow_1, data_e)
 ```
 Summary recipe
 ```{r}
-receta_casas$var_info #%>% arrange(desc(.))
+receta_casas$var_info %>% arrange(desc(.))
 ```
 
 

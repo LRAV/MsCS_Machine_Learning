@@ -1,6 +1,7 @@
 # 1) load libraries and data ----------------------------------------------
 
 library(AmesHousing)
+library(doParallel)
 library(tidymodels)
 library(stacks)
 library(purrr)
@@ -14,14 +15,14 @@ library(yardstick)
 library(tune)
 library(workflows)
 library(stacks)
-library(doParallel)
-source("src/fit_members.R")
+
 all_cores <- parallel::detectCores(logical = FALSE)
 registerDoParallel(cores = all_cores)
 set.seed(1234568)
 
 house_data <- read.csv("data/casas_entrena.csv") %>% 
   mutate(SalePrice = log(SalePrice+1)) %>% 
+  filter(Sale.Condition == "Normal", Gr.Liv.Area < 4000) %>% 
   rename(sale_price = SalePrice)   
 
 control_grid <- control_stack_grid()
@@ -40,16 +41,19 @@ split_and_preprocess <- function(data, prop_p){
   
   preprocessing_recipe <- 
     recipes::recipe(sale_price ~ ., data = train) %>%
-
-    recipes::step_filter(Sale.Condition == "Normal") %>% 
-    recipes::step_filter(Gr.Liv.Area < 4000) %>% 
-    recipes::step_rm(contains("Pool")) %>%
-    
+    # imputaciones
     recipes::step_string2factor(all_nominal()) %>%
     recipes::step_knnimpute(all_predictors(), neighbors = 5) %>% 
     recipes::step_other(all_nominal(), threshold = 0.01) %>%
     recipes::step_nzv(all_nominal()) %>%
     recipes::step_YeoJohnson(all_numeric(), -sale_price) %>% 
+    # interacciones mejor score 0.06738
+    recipes::step_rm(contains("Pool")) %>%
+    recipes::step_mutate(tot_SF = X1st.Flr.SF + X2nd.Flr.SF + Total.Bsmt.SF) %>% 
+    recipes::step_interact(~matches("1st", "2nd"):Total.Bsmt.SF) %>% 
+    #recipes::step_interact(~Garage.Area:Garage.Cars) %>% 
+    #recipes::step_interact(~Wood.Deck.SF:Open.Porch.SF) %>% 
+    
     prep()
   
   folds <- 
@@ -57,7 +61,7 @@ split_and_preprocess <- function(data, prop_p){
       preprocessing_recipe, 
       new_data = train
     ) %>%  
-    rsample::vfold_cv(v = 5)
+    rsample::vfold_cv(v = 3)
   
   workflow <- 
     workflows::workflow() %>%
@@ -119,6 +123,7 @@ def_lgbm <- function(){
     )
   list(model = model, params = params)
 }
+
 grid_and_tune <- function(model, preproc, size_n, ctrl_grid_all){
   if(model == "glmnet"){
     definition = def_glmnet()
@@ -156,6 +161,7 @@ grid_and_tune <- function(model, preproc, size_n, ctrl_grid_all){
   
   list(model_final = model_final, tuned = tuned)
 }
+
 train_final <- function(tuned, preproc){
   
   train_processed <- bake(preproc$recipe,  new_data = preproc$train)
@@ -206,26 +212,28 @@ score$score
 model_list$glmnet <- list(preproc = preproc, tuned = tuned, score = score)
 
 # xgboost
-tuned <- grid_and_tune(model = "xgboost", preproc = preproc, 
-                       size_n = 20, ctrl_grid_all = control_grid)
-score <- train_final(tuned = tuned, preproc = preproc)
-score$score
-model_list$xgboost <- list(preproc = preproc, tuned = tuned, score = score)
+#tuned <- grid_and_tune(model = "xgboost", preproc = preproc,
+#                       size_n = 20, ctrl_grid_all = control_grid)
+#score <- train_final(tuned = tuned, preproc = preproc)
+#score$score
+#model_list$xgboost <- list(preproc = preproc, tuned = tuned, score = score)
 
 # lightgbm
-tuned <- grid_and_tune(model = "lgbm", preproc = preproc, 
-                       size_n = 20, ctrl_grid_all = control_grid)
-score <- train_final(tuned = tuned, preproc = preproc)
-score$score
-model_list$lgbm <- list(preproc = preproc, tuned = tuned, score = score)
+#tuned <- grid_and_tune(model = "lgbm", preproc = preproc,
+#                       size_n = 20, ctrl_grid_all = control_grid)
+#score <- train_final(tuned = tuned, preproc = preproc)
+#score$score
+#model_list$lgbm <- list(preproc = preproc, tuned = tuned, score = score)
+
 
 model_stack <- 
   stacks::stacks() %>%
   stacks::add_candidates(model_list$glmnet$tuned$tuned) %>%
-  stacks::add_candidates(model_list$xgboost$tuned$tuned) %>%
-  stacks::add_candidates(model_list$lgbm$tuned$tuned) %>%
+  #stacks::add_candidates(model_list$xgboost$tuned$tuned) %>%
+  #stacks::add_candidates(model_list$lgbm$tuned$tuned) %>%
   stacks::blend_predictions() 
 
+source("src/fit_members.R")
 model_stack2 <- 
   model_stack %>% 
   fit_members()
@@ -234,8 +242,8 @@ pred_data <- bake(preproc$recipe, new_data = preproc$test)
 star_pred <- bind_cols(pred_data, predict(model_stack2, new_data = pred_data))
 
 model_list$glmnet$score$score
-model_list$xgboost$score$score
-model_list$lgbm$score$score
+#model_list$xgboost$score$score
+#model_list$lgbm$score$score
 score = sqrt(sum((star_pred$sale_price - star_pred$.pred)^2)/nrow(star_pred))
 score
   
@@ -249,6 +257,6 @@ star_pred %>%
   select(id, .pred) %>% 
   mutate(.pred = exp(.pred)-1) %>% 
   set_names(c("id", "SalePrice")) %>% 
-  write.csv("20201025_out_model.csv")
+  write.csv("20201029_out_model.csv")
 
 
