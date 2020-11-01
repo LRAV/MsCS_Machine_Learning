@@ -46,13 +46,17 @@ split_and_preprocess <- function(data, prop_p){
     recipes::step_knnimpute(all_predictors(), neighbors = 5) %>% 
     recipes::step_other(all_nominal(), threshold = 0.01) %>%
     recipes::step_nzv(all_nominal()) %>%
-    recipes::step_YeoJohnson(all_numeric(), -sale_price) %>% 
-    # interacciones mejor score 0.06738
+    
+    # interacciones mejor score 0.06526404
     recipes::step_rm(contains("Pool")) %>%
-    recipes::step_mutate(tot_SF = X1st.Flr.SF + X2nd.Flr.SF + Total.Bsmt.SF) %>% 
-    recipes::step_interact(~matches("1st", "2nd"):Total.Bsmt.SF) %>% 
+    recipes::step_dummy(all_nominal()) %>% 
+    recipes::step_normalize(all_predictors()) %>% 
+    #recipes::step_mutate(tot_SF = X1st.Flr.SF + X2nd.Flr.SF + Total.Bsmt.SF) %>% 
+    #recipes::step_interact(~matches("1st", "2nd"):Total.Bsmt.SF) %>% 
     #recipes::step_interact(~Garage.Area:Garage.Cars) %>% 
     #recipes::step_interact(~Wood.Deck.SF:Open.Porch.SF) %>% 
+    
+    recipes::step_YeoJohnson(all_numeric(), -sale_price) %>% 
     
     prep()
   
@@ -257,6 +261,6 @@ star_pred %>%
   select(id, .pred) %>% 
   mutate(.pred = exp(.pred)-1) %>% 
   set_names(c("id", "SalePrice")) %>% 
-  write.csv("20201029_out_model.csv")
+  write.csv("20201030_out_model.csv")
 
 
