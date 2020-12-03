@@ -1,0 +1,24 @@
+---
+title: "Forecast_Reconciliation"
+author: "Salvador Garcia"
+date: "12/2/2020"
+output: html_document
+---
+
+# Forecast Jerárquico
+
+
+# Datasets comunes
+
+
+## Descripción del problema
+
+## Hierarchical forecasting
+
+### 
+
+https://otexts.com/fpp2/hierarchical.html
+
+
+# Ejemplos
+
