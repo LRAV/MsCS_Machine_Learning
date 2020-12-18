@@ -1,0 +1,109 @@
+\documentclass[oneside]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel} % espanol
+\usepackage{multirow}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{lscape}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{parskip}
+\usepackage[utf8]{inputenc}
+\usepackage[export]{adjustbox}
+\usepackage{wrapfig}
+\usepackage{subfigure}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{minted}
+\usepackage{fancyhdr}
+
+\usepackage[svgnames]{xcolor}
+\usepackage{listings}
+
+\lstset{language=R,
+  language=R,                    
+  basicstyle=\tiny\ttfamily, 
+  numbers=left,              
+  numberstyle=\tiny\color{Blue}, 
+  stepnumber=1,                  
+  numbersep=5pt,                
+  backgroundcolor=\color{white}, 
+  showspaces=false,              
+  showstringspaces=false,        
+  showtabs=false,                
+  frame=single,                  
+  rulecolor=\color{black},       
+  tabsize=2,                     
+  captionpos=b,                  
+  breaklines=true,               
+  breakatwhitespace=false,       
+  keywordstyle=\color{RoyalBlue},
+  commentstyle=\color{YellowGreen},  
+  stringstyle=\color{ForestGreen}  
+}
+
+
+%\usepackage[a4paper, total={6in, 9in}]{geometry}
+%\renewcommand{\contentsname}{Contenido}
+%\renewcommand{\chaptername}{Capítulo}
+%\renewcommand{\bibname}{Referencias}
+%\renewcommand{\headrulewidth}{0.4pt}
+%\renewcommand{\footrulewidth}{0pt}
+\pagenumbering{arabic}
+
+
+\pagestyle{fancy}
+\renewcommand{\chaptername}[1]{ \markboth{#1}{} }
+\fancyhead[R]{\rightmark}
+\fancyhead[L]{\includegraphics[width=.1\textwidth,left]{imgs/logo-ITAM.png}}
+
+\fancypagestyle{plain}{
+    \fancyhead[R]{\rightmark}
+    \fancyhead[L]{\includegraphics[width=.1\textwidth,left]{imgs/logo-ITAM.png}}
+} 
+ 
+\begin{document}
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.15\textwidth]{imgs/logo-ITAM.png}
+	    \par\vspace{2cm}
+	{\huge\bfseries Aprendizaje de Máquina\par}
+	    \vspace{1cm}
+
+	{\Large Luis Alpízar - 121369\par}
+	{Maestría en Ciencias en Computación\par}
+	    \vspace{0.5cm}
+	    
+	{\Large Salvador García - 119718\par}
+	{Maestría en Ciencias en Computación\par}
+	\vspace{0.5cm}
+		
+	{\Large Alan Córdova - 114712\par}
+	{Maestría en Ciencias en Computación\par}
+	    \vspace{0.5cm}
+	    
+	{\Large Conciliación de pronósticos para series de tiempo jerárquicas con Machine Learning\par}
+	    \vspace{0.5cm}
+	{\Large Proyecto Final\par}
+	    \vspace{1cm}
+	{\Large Otoño 2020\par}
+	    \vfill
+	Profesor:\par
+	    \textsc{L. Felipe González Perez}
+	    \vfill
+\end{titlepage}
+
+
+
+\tableofcontents
+\input{Chapters/Chap1.tex}
+\input{Chapters/Chap2.tex}
+\input{Chapters/Chap3.tex}
+\input{Chapters/Chap4.tex}
+\bibliographystyle{IEEEtran}
+\bibliography{Ref}
+\end{document}
