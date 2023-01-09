@@ -2,9 +2,6 @@
 
 Collaborative repo for team projects of Machine Learning. Master in Computer Science at ITAM.
 
-
-Project 1: 
-
 Project 2: Forecast Reconciliation 
 
 Es común encontrar datos de series de tiempo cuya organización refleja una estructura de jerarquía. Cualquier cadena u institución con presencia nacional o internacional debe considerar las delimitaciones geográficas en su planeación. Por ejemplo, la venta de un artículo se puede visualizar como su venta en una tienda específica, en un estado o en una región. Similarmente, dicho artículo puede ser parte de una categoría específica que a su vez es parte de una línea de producto, por lo que su venta debe estar reflejada en estos niveles. 
